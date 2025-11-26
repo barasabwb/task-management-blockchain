@@ -1,0 +1,1 @@
+This is a project I did for my Blockchain fundamentals class. Entailing smart contract development and the connection of a simple vite js React project to interact with the smart contract on the Ethereum blockchain
