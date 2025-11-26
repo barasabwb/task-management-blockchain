@@ -1,0 +1,39 @@
+console.log(allTasks3);
+const allTasks3 = await contract.getAllTasks();
+const allTasks = await contract.getAllTasks();
+console.log(allTasks2);
+const allTasks2 = await contract.getAllTasks();
+const allTasks = await contract.getAllTasks();
+console.log(allTasks);
+const allTasks = await contract.getAllTasks();
+const contract = await TaskManagement.attach("0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"); 
+const TaskManagement = await ethers.getContractFactory("TaskManagement");
+console.log(allTasks);
+const allTasks = await contract.getAllTasks();
+const contract = await TaskManagement.attach("0x5FbDB2315678afecb367f032d93F642f64180aa3");
+const TaskManagement = await ethers.getContractFactory("TaskManagement");
+await hello.greet();
+// Check again
+await tx.wait();
+const tx = await hello.setGreeting("Hi Hardhat!");
+// Change greeting
+await hello.greet();
+// Read current greeting
+);
+  signer
+  HelloWorld.interface,
+  "0xYOUR_DEPLOYED_ADDRESS",
+const hello = new ethers.Contract(
+// Replace with your deployed contract address from Ignition
+const HelloWorld = await ethers.getContractFactory("HelloWorld", signer);
+// Load the contract factory (ABI + bytecode)
+const [signer] = await ethers.getSigners();
+signer.address;
+const [signer] = await ethers.getSigners();
+exit
+const HelloWorld = await ethers.getContractFactory("HelloWorld");
+await hello.greet(); // "Hi Ignition!"
+await hello.setGreeting("Hi Ignition!");
+await hello.greet(); // should show "Hello World!"
+const hello = await HelloWorld.attach("0x1234abc..."); // replace with your address
+const HelloWorld = await ethers.getContractFactory("HelloWorld");
