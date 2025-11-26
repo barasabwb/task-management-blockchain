@@ -7,9 +7,6 @@ import "./App.css";
 
 const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
-// ---------------------------------------------------------
-//  COMPONENTS MOVED OUTSIDE APP SO THEY STOP REMOUNTING
-// ---------------------------------------------------------
 
 const Topbar = React.memo(function Topbar({
   account,
@@ -119,27 +116,21 @@ const Sidebar = React.memo(function Sidebar({
       <div className="flex flex-col gap-2">
         <button
           onClick={() => setActiveView("all")}
-          className={`btn btn-ghost justify-start ${
-            activeView === "all" ? "bg-base-200" : ""
-          }`}
+          className={`btn btn-ghost justify-start ${activeView === "all" ? "bg-base-200" : ""}`}
         >
           All Tasks
         </button>
 
         <button
           onClick={() => setActiveView("mine")}
-          className={`btn btn-ghost justify-start ${
-            activeView === "mine" ? "bg-base-200" : ""
-          }`}
+          className={`btn btn-ghost justify-start ${activeView === "mine" ? "bg-base-200" : ""}`}
         >
           My Tasks
         </button>
 
         <button
           onClick={() => setActiveView("created")}
-          className={`btn btn-ghost justify-start ${
-            activeView === "created" ? "bg-base-200" : ""
-          }`}
+          className={`btn btn-ghost justify-start ${activeView === "created" ? "bg-base-200" : ""}`}
         >
           Tasks I Created
         </button>
@@ -155,7 +146,6 @@ const Sidebar = React.memo(function Sidebar({
 const TaskTable = React.memo(function TaskTable({
   list,
   applyFilters,
-  
   takeTask,
   completeTask,
   cancelTask,
@@ -192,103 +182,92 @@ const TaskTable = React.memo(function TaskTable({
             </tr>
           )}
 
-          {items.map((t) => (
-            <tr key={t.id}>
-              <td>{t.id}</td>
+          {items.map((t) => {
+            const expired = isExpired(t.expiry);
+            const rewardEth = t.reward ? ethers.formatEther(t.reward) : "0";
 
-              <td className="max-w-xs">
-                <div className="font-semibold">{t.name}</div>
-                <div className="text-xs text-muted truncate">{t.description}</div>
-              </td>
+            return (
+              <tr key={t.id}>
+                <td>{t.id}</td>
 
-              <td>
-                <div className={statusColors[t.status]}>
-                  {statusLabels[t.status]}
-                </div>
-              </td>
+                <td className="max-w-xs">
+                  <div className="font-semibold">{t.name}</div>
+                  <div className="text-xs text-muted truncate">{t.description}</div>
+                  <div className="text-xs text-muted mt-1">Reward: {rewardEth} ETH</div>
+                </td>
 
-              <td className="text-xs">
-                {t.creator
-                  ? `${t.creator.slice(0, 6)}...${t.creator.slice(-4)}`
-                  : "-"}
-              </td>
+                <td>
+                  <div className={statusColors[t.status]}>
+                    {statusLabels[t.status]}
+                  </div>
+                </td>
 
-              <td className="text-xs">
-                {t.assignedTo === ethers.ZeroAddress
-                  ? "-"
-                  : `${t.assignedTo.slice(0, 6)}...${t.assignedTo.slice(-4)}`}
-              </td>
+                <td className="text-xs">
+                  {t.creator ? `${t.creator.slice(0, 6)}...${t.creator.slice(-4)}` : "-"}
+                </td>
 
-              <td
-                className={
-                  isExpired(t.expiry)
-                    ? "text-red-600 font-bold"
-                    : "text-sm"
-                }
-              >
-                {formatDate(t.expiry)}
-                {isExpired(t.expiry) && (
-                  <span className="text-xs"> • Expired</span>
-                )}
-              </td>
+                <td className="text-xs">
+                  {t.assignedTo === ethers.ZeroAddress ? "-" : `${t.assignedTo.slice(0, 6)}...${t.assignedTo.slice(-4)}`}
+                </td>
 
-              <td className="text-right">
-                <div className="flex justify-end gap-2">
+                <td className={expired ? "text-red-600 font-bold" : "text-sm"}>
+                  {formatDate(t.expiry)}
+                  {expired && <span className="text-xs"> • Expired</span>}
+                </td>
 
-                  {t.status === 0 && t.creator.toLowerCase() !== account.toLowerCase() && (
-                    <button
-                      className="btn btn-xs btn-info"
-                      onClick={() => takeTask(t.id)}
-                      disabled={loading}
-                    >
-                      Take Task
-                    </button>
-                  )}
-
-                  {t.status === 0 &&
-                    t.creator.toLowerCase() === account.toLowerCase() && (
-                      <>
-                
-
-                        <button
-                          className="btn btn-xs btn-warning"
-                          onClick={() => cancelTask(t.id)}
-                          disabled={loading}
-                        >
-                          Cancel
-                        </button>
-                      </>
+                <td className="text-right">
+                  <div className="flex justify-end gap-2">
+                    {/* Take Task */}
+                    {t.status === 0 && t.creator.toLowerCase() !== account.toLowerCase() && (
+                      <button
+                        className="btn btn-xs btn-info"
+                        onClick={() => takeTask(t.id)}
+                        disabled={loading || expired}
+                      >
+                        Take Task
+                      </button>
                     )}
 
-                  {t.status === 1 &&
-                    t.assignedTo.toLowerCase() === account.toLowerCase() && (
+                    {/* Cancel Task */}
+                    {t.status === 0 && t.creator.toLowerCase() === account.toLowerCase() && (
+                      <button
+                        className="btn btn-xs btn-warning"
+                        onClick={() => cancelTask(t.id)}
+                        disabled={loading || expired}
+                      >
+                        Cancel
+                      </button>
+                    )}
+
+                    {/* Complete Task */}
+                    {t.status === 1 && t.assignedTo.toLowerCase() === account.toLowerCase() && (
                       <button
                         className="btn btn-xs btn-success"
                         onClick={() => completeTask(t.id)}
-                        disabled={loading}
+                        disabled={loading || expired}
                       >
                         Complete
                       </button>
                     )}
 
-                  {!(t.status === 0 || t.status === 1) && (
-                    <button className="btn btn-xs btn-ghost" disabled>
-                      —
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
+                    {/* Default empty */}
+                    {!(t.status === 0 || t.status === 1) && (
+                      <button className="btn btn-xs btn-ghost" disabled>
+                        —
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 });
 
-// ---------------------------------------------------------
-//                       MAIN APP
-// ---------------------------------------------------------
+
 
 export default function App() {
   const [account, setAccount] = useState("");
@@ -325,6 +304,7 @@ export default function App() {
       status: Number(t.status),
       assignedTo: String(t.assignedTo),
       creator: t.creator ? String(t.creator) : undefined,
+      reward: t.reward,
     }));
 
   // ------------------ connect wallet ------------------
@@ -351,14 +331,12 @@ export default function App() {
     }
   };
 
-  // ------------------ load all tasks ------------------
+  // ------------------ load tasks ------------------
   const loadAllTasks = useCallback(async () => {
     if (!contract) return;
     try {
       const raw = await contract.getAllTasks();
-      setAllTasks(
-        normalizeTasks(raw).sort((a, b) => b.timestamp - a.timestamp)
-      );
+      setAllTasks(normalizeTasks(raw).sort((a, b) => b.timestamp - a.timestamp));
     } catch (e) {
       toast.error("Failed to load tasks");
     }
@@ -368,9 +346,7 @@ export default function App() {
     if (!contract || !account) return;
     try {
       const raw = await contract.getUserTasks(account);
-      setMyTasks(
-        normalizeTasks(raw).sort((a, b) => b.timestamp - a.timestamp)
-      );
+      setMyTasks(normalizeTasks(raw).sort((a, b) => b.timestamp - a.timestamp));
     } catch (e) {
       toast.error("Failed to load your tasks");
     }
@@ -395,7 +371,7 @@ export default function App() {
     try {
       setLoading(true);
       const expiry = Math.floor(Date.now() / 1000) + 86400;
-      const tx = await contract.addTask(name, desc, expiry);
+      const tx = await contract.addTask(name, desc, expiry, { value: ethers.parseEther("0.01") });
       await tx.wait();
 
       toast.success("Task added");
@@ -408,29 +384,12 @@ export default function App() {
     }
   };
 
-  const assignTask = async (id) => {
-    if (!contract || !account) return;
-    try {
-      setLoading(true);
-      const tx = await contract.allocateTask(id, account);
-      await tx.wait();
-      toast.success("Task assigned");
-      loadAllTasks();
-      loadMyTasks();
-    } catch (e) {
-      toast.error("Assign failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const takeTask = async (id) => {
     if (!contract || !account) return;
     try {
       setLoading(true);
       const tx = await contract.takeTask(id);
       await tx.wait();
-
       toast.success("Task taken");
       loadAllTasks();
       loadMyTasks();
@@ -440,10 +399,10 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-};
-
+  };
 
   const completeTask = async (id) => {
+    if (!contract) return;
     try {
       setLoading(true);
       const tx = await contract.completeTask(id);
@@ -459,6 +418,7 @@ export default function App() {
   };
 
   const cancelTask = async (id) => {
+    if (!contract) return;
     try {
       setLoading(true);
       const tx = await contract.cancelTask(id);
@@ -467,7 +427,7 @@ export default function App() {
       loadAllTasks();
       loadCreatedTasks();
     } catch (e) {
-      toast.error("Cancel failed");
+      toast.error("Cancel failed: "+(e.reason || e.message));
     } finally {
       setLoading(false);
     }
@@ -483,26 +443,15 @@ export default function App() {
       loadCreatedTasks();
     }
 
-    const onCreated = () => {
-      loadAllTasks();
-      loadCreatedTasks();
-    };
-    const onAssigned = () => {
-      loadAllTasks();
-      loadMyTasks();
-    };
-    const onCompleted = () => {
-      loadAllTasks();
-      loadMyTasks();
-    };
+    const onCreated = () => { loadAllTasks(); loadCreatedTasks(); };
+    const onAssigned = () => { loadAllTasks(); loadMyTasks(); };
+    const onCompleted = () => { loadAllTasks(); loadMyTasks(); };
 
     contract.on("TaskCreated", onCreated);
     contract.on("TaskAssigned", onAssigned);
     contract.on("TaskCompleted", onCompleted);
 
-    return () => {
-      contract.removeAllListeners();
-    };
+    return () => { contract.removeAllListeners(); };
   }, [contract, account]);
 
   // ------------------ filters ------------------
@@ -510,9 +459,7 @@ export default function App() {
     (list) => {
       let out = [...list];
       if (statusFilter !== "all") {
-        out = out.filter(
-          (t) => Number(t.status) === Number(statusFilter)
-        );
+        out = out.filter((t) => Number(t.status) === Number(statusFilter));
       }
       if (search.trim()) {
         const q = search.toLowerCase();
@@ -528,16 +475,11 @@ export default function App() {
   );
 
   const activeList =
-    activeView === "all"
-      ? allTasks
-      : activeView === "mine"
-      ? myTasks
-      : createdTasks;
+    activeView === "all" ? allTasks : activeView === "mine" ? myTasks : createdTasks;
 
   return (
     <div className="min-h-screen bg-base-200 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* TOPBAR (no more focus loss!) */}
         <Topbar
           account={account}
           connectWallet={connectWallet}
@@ -548,7 +490,6 @@ export default function App() {
         />
 
         <div className="grid grid-cols-12 gap-6">
-          {/* SIDEBAR */}
           <div className="col-span-12 md:col-span-3">
             <Sidebar
               activeView={activeView}
@@ -557,7 +498,6 @@ export default function App() {
               loading={loading}
             />
 
-            {/* Stats */}
             <div className="mt-4 space-y-3">
               <div className="card bg-base-100 shadow-sm p-4">
                 <div className="text-sm text-muted">Total tasks</div>
@@ -574,12 +514,10 @@ export default function App() {
             </div>
           </div>
 
-          {/* MAIN TABLE */}
           <div className="col-span-12 md:col-span-9 space-y-4">
             <TaskTable
               list={activeList}
               applyFilters={applyFilters}
-              assignTask={assignTask}
               takeTask={takeTask}
               completeTask={completeTask}
               cancelTask={cancelTask}
