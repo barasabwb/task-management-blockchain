@@ -111,7 +111,7 @@ contract TaskManagement {
     // Approve task completion
     function approveTask(uint256 taskId) external {
         Task storage task = tasks[taskId];
-        require(task.assignedTo == msg.sender, "Not assigned user");
+        require(task.creator == msg.sender, "Not task creator");
         require(task.status == TaskStatus.PENDING_APPROVAL, "Task not pending approval");
 
         task.status = TaskStatus.COMPLETE;
