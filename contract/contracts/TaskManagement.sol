@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 
 contract TaskManagement {
-    enum TaskStatus { UNALLOCATED, INPROGRESS, COMPLETE, CANCELLED }
+    enum TaskStatus { UNALLOCATED, INPROGRESS, PENDING_APPROVAL, COMPLETE, CANCELLED }
 
     struct Task {
         uint256 id;
@@ -27,9 +27,15 @@ contract TaskManagement {
     event TaskAssigned(uint256 taskId, address assignedTo);
     event TaskCancelled(uint256 taskId);
     event TaskCompleted(uint256 taskId);
+    event TaskApproved(uint256 taskId);
 
     modifier onlyCreator(uint256 taskId) {
         require(msg.sender == tasks[taskId].creator, "Not task creator");
+        _;
+    }
+
+    modifier notExpired(uint256 taskId) {
+        require(block.timestamp <= tasks[taskId].expiry, "Task expired  ");
         _;
     }
 
@@ -88,11 +94,25 @@ contract TaskManagement {
         console.log("Task cancelled:", taskId, "Reward refunded:", task.reward);
     }
 
+    
+
     // Complete task and pay reward
     function completeTask(uint256 taskId) external {
         Task storage task = tasks[taskId];
         require(task.assignedTo == msg.sender, "Not assigned user");
         require(task.status == TaskStatus.INPROGRESS, "Task not in progress");
+
+        task.status = TaskStatus.PENDING_APPROVAL;
+
+        emit TaskCompleted(taskId);
+        console.log("Task completed:", taskId, "By:", task.assignedTo);
+    }
+
+    // Approve task completion
+    function approveTask(uint256 taskId) external {
+        Task storage task = tasks[taskId];
+        require(task.assignedTo == msg.sender, "Not assigned user");
+        require(task.status == TaskStatus.PENDING_APPROVAL, "Task not pending approval");
 
         task.status = TaskStatus.COMPLETE;
 
@@ -101,7 +121,7 @@ contract TaskManagement {
         require(sent, "Reward transfer failed");
 
         emit TaskCompleted(taskId);
-        console.log("Task completed:", taskId, "By:", task.assignedTo);
+        console.log("Task approved:", taskId, "To:", task.assignedTo);
         console.log( "Reward:", task.reward);
     }
 

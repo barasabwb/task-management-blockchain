@@ -42,8 +42,9 @@ const Topbar = React.memo(function Topbar({
             <option value="all">All statuses</option>
             <option value="0">Unallocated</option>
             <option value="1">In progress</option>
-            <option value="2">Complete</option>
-            <option value="3">Cancelled</option>
+            <option value="2">Pending Approval</option>
+            <option value="3">Complete</option>
+            <option value="4">Cancelled</option>
           </select>
 
           {!account ? (
@@ -65,11 +66,13 @@ const Topbar = React.memo(function Topbar({
 const QuickAddForm = React.memo(function QuickAddForm({ onAddTask, loading }) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
+  const [rewardEth, setRewardEth] = useState("");
 
   const handleAdd = async () => {
-    await onAddTask(name, desc);
+    await onAddTask(name, desc, rewardEth);
     setName("");
     setDesc("");
+    setRewardEth("");
   };
 
   return (
@@ -87,6 +90,12 @@ const QuickAddForm = React.memo(function QuickAddForm({ onAddTask, loading }) {
         placeholder="description"
         value={desc}
         onChange={(e) => setDesc(e.target.value)}
+      />
+      <input
+        className="input input-sm input-bordered mb-2"
+        placeholder="Reward in ETH"
+        value={rewardEth}
+        onChange={(e) => setRewardEth(e.target.value)}
       />
 
       <button
@@ -148,6 +157,7 @@ const TaskTable = React.memo(function TaskTable({
   applyFilters,
   takeTask,
   completeTask,
+  approveTask,
   cancelTask,
   account,
   loading,
@@ -250,8 +260,19 @@ const TaskTable = React.memo(function TaskTable({
                       </button>
                     )}
 
+                    {/* Approve Task */}
+                    {t.status === 2 && t.creator.toLowerCase() === account.toLowerCase() && (
+                      <button
+                        className="btn btn-xs btn-success"
+                        onClick={() => approveTask(t.id)}
+                        disabled={loading || expired}
+                      >
+                        Approve
+                      </button>
+                    )}
+
                     {/* Default empty */}
-                    {!(t.status === 0 || t.status === 1) && (
+                    {!(t.status === 0 || t.status === 1 || t.status === 2) && (
                       <button className="btn btn-xs btn-ghost" disabled>
                         —
                       </button>
@@ -283,12 +304,13 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const statusLabels = ["UNALLOCATED", "INPROGRESS", "COMPLETE", "CANCELLED"];
+  const statusLabels = ["UNALLOCATED", "INPROGRESS", "PENDING_APPROVAL", "COMPLETE", "CANCELLED"];
   const statusColors = {
     0: "badge badge-ghost",
     1: "badge badge-warning",
-    2: "badge badge-success",
-    3: "badge badge-error",
+    2: "badge badge-secondary",
+    3: "badge badge-success",
+    4: "badge badge-error",
   };
 
   const isExpired = (exp) => exp * 1000 < Date.now();
@@ -366,12 +388,12 @@ export default function App() {
   }, [contract, account]);
 
   // ------------------ actions ------------------
-  const addTask = async (name, desc) => {
-    if (!contract || !name) return;
+  const addTask = async (name, desc, rewardEth) => {
+    if (!contract || !name || !rewardEth) return;
     try {
       setLoading(true);
       const expiry = Math.floor(Date.now() / 1000) + 86400;
-      const tx = await contract.addTask(name, desc, expiry, { value: ethers.parseEther("0.01") });
+      const tx = await contract.addTask(name, desc, expiry, { value: ethers.parseEther(rewardEth) });
       await tx.wait();
 
       toast.success("Task added");
@@ -412,6 +434,22 @@ export default function App() {
       loadMyTasks();
     } catch (e) {
       toast.error("Complete failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const approveTask = async (id) => {
+    if (!contract) return;
+    try {
+      setLoading(true);
+      const tx = await contract.approveTask(id);
+      await tx.wait();
+      toast.success("Task approved");
+      loadAllTasks();
+      loadMyTasks();
+    } catch (e) {
+      toast.error("Approval failed: "+(e.reason || e.message));
     } finally {
       setLoading(false);
     }
@@ -520,6 +558,7 @@ export default function App() {
               applyFilters={applyFilters}
               takeTask={takeTask}
               completeTask={completeTask}
+              approveTask={approveTask}
               cancelTask={cancelTask}
               account={account}
               loading={loading}
