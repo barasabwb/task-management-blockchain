@@ -86,7 +86,10 @@ contract TaskManagement {
         onlyCreator(taskId)
         returns (bool)
     {
+        
         Task storage task = tasks[taskId];
+        require(task.status == TaskStatus.UNALLOCATED, "Task already allocated");
+        
         if (task.status == TaskStatus.UNALLOCATED) {
             task.status = TaskStatus.CANCELLED;
 
