@@ -20,7 +20,7 @@ const Topbar = React.memo(function Topbar({
     <div className="w-full flex items-center justify-between bg-base-200 px-4 py-3 rounded-md mb-4 shadow-sm">
       <div className="flex items-center gap-3">
         <h1 className="text-xl font-semibold">Taskify</h1>
-        <span className="text-sm text-muted">Complete tasks for cash</span>
+        <span className="text-sm text-muted">Complete tasks for ETH</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -329,7 +329,7 @@ export default function App() {
       reward: t.reward,
     }));
 
-  // ------------------ connect wallet ------------------
+  // CONNECT WALLET
   const connectWallet = async () => {
     try {
       if (!window.ethereum) return toast.error("MetaMask not found");
@@ -353,7 +353,7 @@ export default function App() {
     }
   };
 
-  // ------------------ load tasks ------------------
+  // LOAD TASKS
   const loadAllTasks = useCallback(async () => {
     if (!contract) return;
     try {
@@ -387,7 +387,7 @@ export default function App() {
     }
   }, [contract, account]);
 
-  // ------------------ actions ------------------
+  //DEFINE CONTRACT ACTIONS
   const addTask = async (name, desc, rewardEth) => {
     if (!contract || !name || !rewardEth) return;
     try {
@@ -471,7 +471,7 @@ export default function App() {
     }
   };
 
-  // ------------------ event listeners ------------------
+  // EVENT LISTENERS
   useEffect(() => {
     if (!contract) return;
 
@@ -492,7 +492,7 @@ export default function App() {
     return () => { contract.removeAllListeners(); };
   }, [contract, account]);
 
-  // ------------------ filters ------------------
+  // FILTERS
   const applyFilters = useCallback(
     (list) => {
       let out = [...list];

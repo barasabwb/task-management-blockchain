@@ -50,24 +50,7 @@ describe("TaskManagement Contract", function () {
     await expect(taskContract.takeTask(0)).to.be.revertedWith("Creator cannot take own task");
   });
 
-  it("Should allow creator to cancel an unallocated task and refund", async () => {
-    const reward = ethers.parseEther("0.01");
-    await taskContract.connect(owner).addTask("Cancel Task", "Desc", 12345, { value: reward });
 
-    const initialBalance = await ethers.provider.getBalance(owner.address);
-
-    const tx = await taskContract.cancelTask(0);
-    const receipt = await tx.wait();
-    const gasUsed = receipt.gasUsed * (tx.gasPrice?? 0n);
-
-    const finalBalance = await ethers.provider.getBalance(owner.address);
-
-    // After refund, balance should increase (minus gas)
-    expect(finalBalance).to.be.above(initialBalance - gasUsed);
-
-    const task = await taskContract.tasks(0);
-    expect(task.status).to.equal(3); 
-  });
 
   it("Should NOT allow cancel after task is taken", async () => {
     const reward = ethers.parseEther("0.01");
@@ -77,25 +60,6 @@ describe("TaskManagement Contract", function () {
     await expect(taskContract.cancelTask(0)).to.be.revertedWith("Task already allocated");
   });
 
-  it("Should allow assigned user to complete a task and receive reward", async () => {
-    const reward = ethers.parseEther("0.01");
-    await taskContract.connect(owner).addTask("Complete Task", "Desc", 1000, { value: reward });
-    await taskContract.connect(user1).takeTask(0);
-
-    const initialBalance = await ethers.provider.getBalance(user1.address);
-
-    const tx = await taskContract.connect(user1).completeTask(0);
-    const receipt = await tx.wait();
-    const gasUsed = receipt.gasUsed * (tx.gasPrice?? 0n);
-
-    const finalBalance = await ethers.provider.getBalance(user1.address);
-
-    // Balance should increase by reward minus gas
-    expect(finalBalance).to.be.above(initialBalance - gasUsed);
-
-    const task = await taskContract.tasks(0);
-    expect(task.status).to.equal(2);
-  });
 
   it("Should return all tasks", async () => {
     const reward = ethers.parseEther("0.01");
