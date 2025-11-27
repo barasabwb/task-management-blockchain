@@ -4,8 +4,10 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 
 contract TaskManagement {
+    // structures and enums
+    // Task statuses
     enum TaskStatus { UNALLOCATED, INPROGRESS, PENDING_APPROVAL, COMPLETE, CANCELLED }
-
+    // Task structure
     struct Task {
         uint256 id;
         string name;
@@ -18,17 +20,23 @@ contract TaskManagement {
         uint256 reward;
     }
 
+    // Mappings and state variables
     mapping(uint256 => Task) public tasks;
     mapping(address => uint256[]) public userTasks;
+
+    // for iteration
     uint256[] public taskIds;
     uint256 public numTasks;
 
+    // Events
     event TaskCreated(uint256 taskId, string name, uint256 expiry, address creator);
     event TaskAssigned(uint256 taskId, address assignedTo);
     event TaskCancelled(uint256 taskId);
     event TaskCompleted(uint256 taskId);
     event TaskApproved(uint256 taskId);
 
+
+    //modifiers
     modifier onlyCreator(uint256 taskId) {
         require(msg.sender == tasks[taskId].creator, "Not task creator");
         _;
@@ -66,7 +74,7 @@ contract TaskManagement {
     }
 
     // Take a task
-    function takeTask(uint256 taskId) external {
+    function takeTask(uint256 taskId) external notExpired(taskId) {
         Task storage task = tasks[taskId];
         require(task.status == TaskStatus.UNALLOCATED, "Not unallocated");
         require(task.creator != msg.sender, "Creator cannot take own task");
@@ -86,7 +94,7 @@ contract TaskManagement {
 
         task.status = TaskStatus.CANCELLED;
 
-        // Safe refund
+        // refund
         (bool sent, ) = task.creator.call{value: task.reward}("");
         require(sent, "Refund failed");
 
@@ -96,10 +104,10 @@ contract TaskManagement {
 
     
 
-    // Complete task and pay reward
-    function completeTask(uint256 taskId) external {
+    // Complete task - needs approval to get reward
+    function completeTask(uint256 taskId) external notExpired(taskId) {
         Task storage task = tasks[taskId];
-        require(task.assignedTo == msg.sender, "Not assigned user");
+        require(task.assignedTo == msg.sender, "You are not assigned to this task");
         require(task.status == TaskStatus.INPROGRESS, "Task not in progress");
 
         task.status = TaskStatus.PENDING_APPROVAL;
@@ -111,20 +119,21 @@ contract TaskManagement {
     // Approve task completion
     function approveTask(uint256 taskId) external {
         Task storage task = tasks[taskId];
-        require(task.creator == msg.sender, "Not task creator");
-        require(task.status == TaskStatus.PENDING_APPROVAL, "Task not pending approval");
+        require(task.creator == msg.sender, "You are not the creator");
+        require(task.status == TaskStatus.PENDING_APPROVAL, "The task is not pending approval");
 
         task.status = TaskStatus.COMPLETE;
 
         // Safe payment
         (bool sent, ) = task.assignedTo.call{value: task.reward}("");
-        require(sent, "Reward transfer failed");
+        require(sent, "Reward payment failed");
 
-        emit TaskCompleted(taskId);
+        emit TaskApproved(taskId);
         console.log("Task approved:", taskId, "To:", task.assignedTo);
         console.log( "Reward:", task.reward);
     }
 
+    // get all tasks
     function getAllTasks() external view returns (Task[] memory) {
         Task[] memory all = new Task[](taskIds.length);
         for (uint256 i = 0; i < taskIds.length; i++) {
@@ -133,6 +142,7 @@ contract TaskManagement {
         return all;
     }
 
+    // get tasks assigned to a user    
     function getUserTasks(address user) external view returns (Task[] memory) {
         uint256[] memory ids = userTasks[user];
         Task[] memory result = new Task[](ids.length);

@@ -19,8 +19,8 @@ const Topbar = React.memo(function Topbar({
   return (
     <div className="w-full flex items-center justify-between bg-base-200 px-4 py-3 rounded-md mb-4 shadow-sm">
       <div className="flex items-center gap-3">
-        <h1 className="text-xl font-semibold">TaskManager Dashboard</h1>
-        <span className="text-sm text-muted">Manage tasks on-chain</span>
+        <h1 className="text-xl font-semibold">Taskify</h1>
+        <span className="text-sm text-muted">Complete tasks for cash</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -400,7 +400,7 @@ export default function App() {
       loadAllTasks();
       loadCreatedTasks();
     } catch (e) {
-      toast.error("Add failed");
+      toast.error("Add failed"+(e.reason || e.message));
     } finally {
       setLoading(false);
     }
